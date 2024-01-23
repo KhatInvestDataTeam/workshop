@@ -27,17 +27,12 @@ BEGIN
         i := i + 1;
     END LOOP;
 END $$;
-
+---------------------------------------------------------------------------------------------
 
 --TRUNCATE TABLE product."Sessions", product."Orders" RESTART IDENTITY;
 
-do $$ 
-declare 
-    i int := 1
-begin 
-	while 
 
-
+------------------------------
 
 DO $$ 
 DECLARE
@@ -50,6 +45,13 @@ BEGIN
         i := i + 3;
     END LOOP;
 END $$;
+
+---------------------------------------------------------------------------------------------
+
+
+
+
+------------------------------ Insert into product."Products" -------------------------------
 
 INSERT INTO product."Products" (product_name, price)
 VALUES 
@@ -65,36 +67,65 @@ VALUES
     ('Microwave Oven', 100),
     ('Digital Camera', 400),
     ('External Hard Drive', 120);
+   
+---------------------------------------------------------------------------------------------
 
+   
+   
 
-insert into product."Sessions" (started_at, ended_at, created_at)
-values
-    ('2023-11-08 04:05:06'::timestamp, '2023-11-08 05:02:05'::timestamp, '2023-11-08 05:02:05'::timestamp),
-    ('2023-11-09 12:05:06'::timestamp, '2023-11-09 12:10:05'::timestamp, '2023-11-09 12:10:05'::timestamp),
-    ('2023-11-09 13:12:00'::timestamp, '2023-11-09 13:21:02'::timestamp, '2023-11-09 13:21:02'::timestamp),
-    ('2023-11-09 15:05:06'::timestamp, '2023-11-09 15:42:15'::timestamp, '2023-11-09 15:42:15'::timestamp),
-    ('2023-11-10 10:05:01'::timestamp, '2023-11-10 10:02:01'::timestamp, '2023-11-10 10:02:01'::timestamp),
-    ('2023-11-10 11:06:32'::timestamp, '2023-11-10 11:09:19'::timestamp, '2023-11-10 11:09:19'::timestamp)
+------------------------------ Insert into product."Sessions" ------------------------------
     
-INSERT INTO product."Orders" (product_id, customer_id, product_count, created_at, session_id)
-values
-    (1, 2, 2, CURRENT_TIMESTAMP, 1),
-    (2, 2, 1, CURRENT_TIMESTAMP, 1),
-    (3, 2, 3, CURRENT_TIMESTAMP, 1),
-    (6, 2, 1, CURRENT_TIMESTAMP, 1),
-    (12, 2, 2, CURRENT_TIMESTAMP, 1),
-    (1, 4, 2, CURRENT_TIMESTAMP, 3),
-    (2, 4, 2, CURRENT_TIMESTAMP, 3),
-    (3, 4, 1, CURRENT_TIMESTAMP, 3),
-    (6, 4, 1, CURRENT_TIMESTAMP, 3),
-    (12,4, 3, CURRENT_TIMESTAMP, 3),
-    (1, 1, 2, CURRENT_TIMESTAMP, 4),
-    (2, 1, 1, CURRENT_TIMESTAMP, 4),
-    (3, 1, 3, CURRENT_TIMESTAMP, 4),
-    (12, 2, 2, CURRENT_TIMESTAMP, 4),
-    (1, 2, 2, CURRENT_TIMESTAMP, 5),
-    (1, 5, 2, CURRENT_TIMESTAMP, 6),
-    (2, 5, 1, CURRENT_TIMESTAMP, 6),
-    (3, 2, 3, CURRENT_TIMESTAMP, 6),
-    (12, 2, 2, CURRENT_TIMESTAMP, 6),
-    (1, 2, 2, CURRENT_TIMESTAMP, 6)
+with sessions(started_at, ended_at, created_at) as (
+    select 
+	    *,
+	    ended_at as created_at
+	from 
+		(select
+		     *,
+		     started_at + (floor(random()*120) ||' minutes')::interval as ended_at
+		from 
+			(select 
+			    make_timestamp(2023, 12,ceil(random()*30)::int, ceil(random()*22)::int, ceil(random()*59)::int, ceil(random()*59)::int) as started_at
+			from generate_series(1,200)	) timestamp_
+			) timestamp__
+		order by started_at
+		)
+insert into product."Sessions" (started_at, ended_at, created_at) 
+select * from sessions
+    
+---------------------------------------------------------------------------------------------
+		
+
+
+
+------------------------------ Insert into product."Orders" ---------------------------------
+
+with products_ as (
+    select 
+	    ceil(random()*93)::int + 6 as session_id,
+	    ceil(random()*12)::int as product_id,
+	    ceil(random()*10)::int as product_count
+	from generate_series(1,500) order by session_id
+	) 
+insert into product."Orders" (session_id, customer_id, product_id, product_count)
+select 
+    session_products.*,
+    products_.product_id, 
+    products_.product_count
+from
+	(select 
+	    *,
+	    ceil(random()*50)::int as customer_id
+	from
+		(select 
+		    distinct session_id
+		from products_
+		) sessions_ids 
+	) session_products
+left join products_ on session_products.session_id = products_.session_id
+
+---------------------------------------------------------------------------------------------
+
+
+
+
