@@ -114,3 +114,15 @@ left join product."Products" products on orders.product_id = products.product_id
 where "product_name" = 'TV' -- Бүтээгдэхүүний нэрээ TV -тэй тэнцүүлэн хайлт хийх
 group by orders.customer_id 
 order by Tv_total_price desc --Зурагтын нийт үнээ ихээс багаруу эрэмблэх
+
+
+--Зурагт худалдан авахдаа 12000-с их дүн зарцуулсан харилцагчдын зарцуулсан нийт дүнг ихээс бага руу эрэмбэл
+select
+    orders.customer_id,
+    sum(products.price*orders.product_count) as Tv_total_price --sum функц ашиглан зурагтын нийт дүнг гаргав
+from product."Orders" orders -- Худалдан авалтын дата 
+left join product."Products" products on orders.product_id = products.product_id --  product_id баганаар 2 хүснэгтнийг холбож нийлүүлж байна.
+where "product_name" = 'TV' -- Бүтээгдэхүүний нэрээ TV -тэй тэнцүүлэн хайлт хийх
+group by orders.customer_id 
+having sum(products.price*orders.product_count) >12000
+order by Tv_total_price desc --Зурагтын нийт үнээ ихээс багаруу эрэмблэх
