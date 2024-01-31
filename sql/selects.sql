@@ -56,7 +56,7 @@ select
 from product."Orders" orders -- Худалдан авалтын дата 
 left join product."Products" products on orders.product_id = products.product_id --  product_id баганаар 2 хүснэгтнийг холбож нийлүүлж байна.
 left join customer."Contact" contact on orders.customer_id=contact.customer_id -- customer_id  баганаар 2 хүснэгтнийг холбож нийлүүлж байна.
-where "product_name" = 'Laptop'
+where "product_name" = 'Laptop' -- Бүтээгдэхүүний нэрээ нь Laptop -тэй тэнцүүлэн хайлт хийх
 
 
 --Харилцагч нарын нэг удаагийн худалдан авалтын бүтээгдэхүүний нийт тоо
@@ -71,35 +71,46 @@ group by session_id, customer_id -- session_id/Нэг сагсны худалд�
 --Худалдан авалт хийгээгүй session_id -н хугацааг минутаар гаргах
 select
    sessions.session_id,
-   extract(minute from ended_at-started_at)as session_time
-from product."Sessions" sessions 
+   extract(minute from ended_at-started_at)as session_time --Худалдан авалт хийгээгүй session_id -н хугацааг минут руу шилжүүлэх
+from product."Sessions" sessions --Бүтээгдэхүүний сагсны дата
 left join product."Orders" orders on orders.session_id=sessions.session_id
-where product_id is null
+where product_id is null --product_id хоосон session_id нь худалдан авалт хийгээгүй гэсэн үг
 
---Худалдан авалтад зарцуулсан хугацааг ол. Гол table -ээ product."Sessions"-г сонгох
+--Худалдан авалтад зарцуулсан хугацааг ол. Гол table -ээ Бүтээгдэхүүний сагсны дата-г сонгох
 select
    sessions.session_id,
-   (ended_at-started_at)as session_time
-from product."Sessions" sessions
-inner join product."Orders" orders on orders.session_id=sessions.session_id
+   (ended_at-started_at)as session_time --Худалдан авалтад зарцуулсан хугацаа
+from product."Sessions" sessions --Бүтээгдэхүүний сагсны дата
+inner join product."Orders" orders on orders.session_id=sessions.session_id 
 
 
---нэг удаагийн худалдан авалтын дүн нь 2500 болон түүнээс дээш хэрэглэгчдийн худалдан авалтын нийт дүн, холбоо барих мэдээлэл, барааны төрлийн тоо, худалдан авалт хийсэн сагсны тоог ол
+--Нэг удаагийн худалдан авалтын дүн нь 2500 болон түүнээс дээш хэрэглэгчдийн худалдан авалтын нийт дүн, холбоо барих мэдээлэл, барааны төрлийн тоо, худалдан авалт хийсэн сагсны тоог ол
 select 
 	once.customer_id,
 	contact.phone,
 	contact.email,
-	count(once.product_id) as product_count,
-	count(once.session_id) as session_count,
-	sum (once.One_total_price) as total_price
+	count(once.product_id) as product_count, --count функц ашиглан барааны төрлийн тоог гаргав
+	count(once.session_id) as session_count, --count функц ашиглан худалдан авалт хийсэн сагсны тоог гаргав
+	sum (once.One_total_price) as total_price --худалдан авалтын нийт дүн
 from (select 
-	orders.customer_id as customer_id  ,
+      	orders.customer_id as customer_id  ,
 	orders.product_id as product_id ,
 	sum(orders.product_count*products.price) as one_total_price, --Нэг удаагийн худалдан авалт хийсэн дүн 
 	orders.session_id as session_id
-from product."Orders" orders -- Худалдан авалтын дата 
-left join product."Products" products on products.product_id =orders.product_id 
-group by orders.session_id ,orders.customer_id, orders.product_id) once
+      from product."Orders" orders -- Худалдан авалтын дата 
+      left join product."Products" products on products.product_id =orders.product_id 
+      group by orders.session_id ,orders.customer_id, orders.product_id) once --Нэг удаагийн худалдан авалтын дүнг тооцсон датагаа once нэртэй table болгов
 left join customer."Contact" contact on contact.customer_id=once.customer_id
-where once.one_total_price >=2500
+where once.one_total_price >=2500  --Нэг удаагийн худалдан авалтын дүн нь 2500 болон түүнээс дээш гэсэн филтер
 group by once.customer_id, contact.phone, contact.email
+
+
+--Зурагт худалдан авсан харилцагчдын зарцуулсан нийт дүнг ихээс бага руу эрэмбэл
+select
+    orders.customer_id,
+    sum(products.price*orders.product_count) as Tv_total_price --sum функц ашиглан зурагтын нийт дүнг гаргав
+from product."Orders" orders -- Худалдан авалтын дата 
+left join product."Products" products on orders.product_id = products.product_id --  product_id баганаар 2 хүснэгтнийг холбож нийлүүлж байна.
+where "product_name" = 'TV' -- Бүтээгдэхүүний нэрээ TV -тэй тэнцүүлэн хайлт хийх
+group by orders.customer_id 
+order by Tv_total_price desc --Зурагтын нийт үнээ ихээс багаруу эрэмблэх
