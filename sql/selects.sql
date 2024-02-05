@@ -24,7 +24,7 @@ select -- Датаг хайх түлхүүр үг
 from product."Sessions"
 
 
--- table/ хүснэгтээс багануудыг сонгох
+-- product schema-ийн "Products" хүснэгтээс product_id, product_name, price  багануудыг сонгох
 
 select 
     product_id, 
@@ -33,7 +33,15 @@ select
 from product."Products" 
 
 
--- Харилцагчийн худалдан авалт хийсэн нийт дүн
+--product schema-ийн "Products" хүснэгтийг product schema-ийн "Orders" хүснэгттэй холбож products."product_id" , orders."order_id", orders."product_count" багануудыг сонгох
+select
+    products."product_id",
+    orders."order_id",
+    orders."product_count"
+from product."Products" products -- Бүтээгдэхүүний дата 
+inner join product."Orders" orders on orders."product_id"=products."product_id" --product_id баганаар 2 хүснэгтнийг холбож нийлүүлж байна.
+
+-- Харилцагч болгоны худалдан авалт хийсэн нийт дүн
 select 
     customer_id, -- Харилцагчийн дугаар
     sum(product_count*price) as total_price --Худалдан авалт хийсэн нийлбэр дүн 
