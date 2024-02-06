@@ -96,18 +96,18 @@ inner join product."Orders" orders on orders.session_id=sessions.session_id
 select 
 	once.customer_id,
 	contact.phone,
-	contact.email,
-	count(once.product_id) as product_count, --count функц ашиглан барааны төрлийн тоог гаргав
-	count(once.session_id) as session_count, --count функц ашиглан худалдан авалт хийсэн сагсны тоог гаргав
+	contact.email, 
+	sum(once.product_count),
+	count(distinct once.session_id) as session_count, --count функц ашиглан худалдан авалт хийсэн сагсны тоог гаргав
 	sum (once.One_total_price) as total_price --худалдан авалтын нийт дүн
 from (select 
-      	orders.customer_id as customer_id  ,
-	orders.product_id as product_id ,
-	sum(orders.product_count*products.price) as one_total_price, --Нэг удаагийн худалдан авалт хийсэн дүн 
-	orders.session_id as session_id
+       	 orders.customer_id as customer_id  ,
+       	 count(distinct orders.product_id) as product_count,--count функц ашиглан барааны төрлийн тоог гаргав
+		 sum(orders.product_count*products.price) as one_total_price, --Нэг удаагийн худалдан авалт хийсэн дүн 
+		 orders.session_id as session_id
       from product."Orders" orders -- Худалдан авалтын дата 
       left join product."Products" products on products.product_id =orders.product_id 
-      group by orders.session_id ,orders.customer_id, orders.product_id) once --Нэг удаагийн худалдан авалтын дүнг тооцсон датагаа once нэртэй table болгов
+      group by orders.session_id, orders.customer_id ) once --Нэг удаагийн худалдан авалтын дүнг тооцсон датагаа once нэртэй table болгов
 left join customer."Contact" contact on contact.customer_id=once.customer_id
 where once.one_total_price >=2500  --Нэг удаагийн худалдан авалтын дүн нь 2500 болон түүнээс дээш гэсэн филтер
 group by once.customer_id, contact.phone, contact.email
